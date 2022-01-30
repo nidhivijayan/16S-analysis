@@ -71,3 +71,13 @@ qiime feature-classifier classify-sklearn --i-classifier gg_99_classifier.qza --
 ```ruby
 qiime taxa barplot --i-table filtered-table.qza --i-taxonomy taxonomy.qza --m-metadata-file metadata_squid_Jan2022.txt  --o-visualization taxa-bar-plots.qzv
 ```
+### To convert table to biom file
+```ruby
+qiime tools export  --input-path filtered-table.qza --output-path exported-feature-table
+```
+### To convert biom to tsv
+```ruby
+biom convert -i feature-table.biom -o table.txt --to-tsv
+```
+
+## The remaining analyses with ASV and taxonomy table can be merged and processed in R
