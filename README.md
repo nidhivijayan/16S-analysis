@@ -14,10 +14,10 @@ qiime dada2 denoise-paired --i-demultiplexed-seqs your_demuxed_filename.qza  \
 
 TO FILTER OUT THE CONTROL SEQS
 qiime feature-table filter-samples \
-#  --i-table table_demux_dada.qza \
-# --m-metadata-file metadata_squid_Jan2022.txt \
-#  --p-where '"#SampleID" IN ("Control1", "Control2","Control3")' \
-#  --o-filtered-table table-blanks.qza
+  --i-table table_demux_dada.qza \
+ --m-metadata-file metadata_squid_Jan2022.txt \
+  --p-where '"#SampleID" IN ("Control1", "Control2","Control3")' \
+  --o-filtered-table table-blanks.qza
 
 qiime feature-table summarize \
   --i-table table-blanks.qza \
