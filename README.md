@@ -71,9 +71,12 @@ qiime feature-classifier classify-sklearn --i-classifier gg_99_classifier.qza --
 ```ruby
 qiime taxa barplot --i-table filtered-table.qza --i-taxonomy taxonomy.qza --m-metadata-file metadata_squid_Jan2022.txt  --o-visualization taxa-bar-plots.qzv
 ```
-### To convert table to biom file
+### To convert table to biom and taxonomy file
 ```ruby
 qiime tools export  --input-path filtered-table.qza --output-path exported-feature-table
+
+qiime tools export --input-path /Users/nidhivijayan/Documents/QIIME/all_squids_data/dada_qiime/taxonomy_demx_paired.qza --output-path taxonomy_phyloseq
+
 ```
 ### To convert biom to tsv
 ```ruby
