@@ -1,5 +1,5 @@
 # 16S-analysis
-##QIIME2 pipeline
+## QIIME2 pipeline
 
 
 qiime tools import --type 'SampleData[PairedEndSequencesWithQuality]' \
@@ -23,7 +23,7 @@ qiime feature-table summarize \
   --i-table table-blanks.qza \
   --o-visualization table-blanks.qzv
 
-#I donwloaded the "Frequency per feature detail in csv, which is the "feature-frequency-detail.csv" file.
+# I donwloaded the "Frequency per feature detail in csv, which is the "feature-frequency-detail.csv" file.
 echo 'Feature ID\tFrequency' | cat - feature-frequency-detail.csv | tr "," "\\t" > features-to-filter.tsv
 
 qiime feature-table filter-samples \
@@ -43,13 +43,13 @@ qiime feature-table filter-features \
   --i-table filtered-table.qza \
   --o-visualization filtered-table.qzv
   
-#Convert SILVA database to QIIME classifier
+# Convert SILVA database to QIIME classifier
 qiime feature-classifier fit-classifier-naive-bayes \
 --i-reference-reads ref-seqs.qza \
 --i-reference-taxonomy 99_ref-taxonomy.qza \
 --o-classifier gg_99_classifier_2.qza
 
-#Add taxonomy
+# Add taxonomy
 qiime feature-classifier classify-sklearn --i-classifier gg_99_classifier.qza --i-reads rep-set.qza --o-classification taxonomy.qza 
 
 qiime taxa barplot --i-table filtered-table.qza --i-taxonomy taxonomy.qza --m-metadata-file metadata_squid_Jan2022.txt  --o-visualization taxa-bar-plots.qzv
