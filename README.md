@@ -1,6 +1,8 @@
 # 16S-analysis
 ## QIIME2 pipeline
 
+qiime/2-2020.6
+
 ```ruby
 qiime tools import --type 'SampleData[PairedEndSequencesWithQuality]' \
  --input-path /home/FCAM/nvijayan/(your input folder here) \
