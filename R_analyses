@@ -1,0 +1,76 @@
+asv1<-read.table(file="table_from_biom.csv",sep=",",header=TRUE,row.names = 1) #ROW.NAMES=1 is VERY IMPORTANT!!!
+asv1m=as.matrix(asv1)
+#"fill" is to make sure empty cells are coerced or left blank, replace with "," to the " (tab) " [BY COPYING THE TAB IN TEXT EDIT!] to get taxa in separate columns
+#Rename FeatureID as OTUID, in order to merge table and taxonomy file, the columns should have the same name
+#In taxonomy.tsv file, replace "taxon" with ;Kingdom;Phylum;Class;Order;Family;Genus;Species and replace k__ with ;k__
+taxon2<-read.table(file="taxonomy.tsv",sep=";",header=TRUE,fill=NA)
+
+#MERGE
+merged_file<-merge(OTU,TAX,by.x=c("OTUID"),by.y=c("OTUID"))
+write.table(merged_file,file="merged_otu_tax",sep="\t",col.names = TRUE,row.names=FALSE)
+#To make first row into column names
+names(OTU_table2)<-lapply(OTU_table2[1,],as.character)
+View(OTU_table2)
+OTU_table2<-OTU_table2[-1,]
+#To trim a table, make new table from old one
+OTU_table2=OTU_table[1:93,]
+
+#for mapping file, make sure "SAMPLEID" one word and all parameters are one words
+metadata1 = read.table("map_squid.txt", row.names=1,header=TRUE)
+META = sample_data(metadata1)
+phy_tree<-read_tree("tree.nwk")
+physeq = phyloseq(OTU, TAX, META,phy_tree)
+sample_variables(physeq)
+
+speciesList <- tapply(sample_names(physeq2.r), get_variable(physeq2.r, "Description"), c)
+speciesPhyseq <- lapply(speciesList, prune_samples, physeq2.r)
+speciesOTUtable <- lapply(speciesPhyseq,otu_table)
+speciesAvg <- lapply(speciesOTUtable,rowMeans)
+pooledOTUtable = t(do.call(rbind,speciesAvg))
+pooledOTUtable = data.frame(OTU=row.names(pooledOTUtable),pooledOTUtable)
+TT = tax_table(physeq2.r)
+TT = TT[, which(apply(!apply(TT, 2, is.na), 2, any))]
+tdf = data.frame(TT, OTU = taxa_names(physeq2.r))
+pOTUtax = merge(pooledOTUtable, tdf, by.x = "OTU")
+View(pOTUtax)
+pOTU = data.frame(pOTUtax,SeqTotal = rowSums(pOTUtax[,2:11]))
+# To take only top 100 OTUs (user defined)
+pOTU = pOTU[order(-pOTU$SeqTotal),]
+pOTUtop = pOTU[1:100,]
+
+# This calculaton will tell you what percentage of the data you are representing in the plot
+sum(pOTUtop$SeqTotal)/sum(pOTU$SeqTotal)
+
+# Plot bar chart of phylum level differences
+pOTU.phylum =pOTUtop[,c(2:16,18)]
+melt.phylum = melt(pOTU.phylum,id.vars="Phylum")
+colnames(melt.phylum)[2]="species"
+agg.phylum=aggregate(.~Phylum+species,melt.phylum,sum)
+
+rela_abundance_plot1= ggplot(agg.phylum,aes(x=species,y=value,fill=Phylum)) +
+geom_bar(stat="identity",position="fill") +
+scale_y_continuous(labels = percent_format())+
+xlab("Butterfly species") +
+ylab("Relative Abudance") +
+scale_fill_manual(values = c("grey26","chartreuse3","cyan", "red","darkorange","royalblue", "darkgreen","blue4", "yellow1", "violetred","deepskyblue", "mediumorchid3","#89C5DA", "#DA5724", "#74D944", "#C84248",
+"#673770", "#D3D93E", "#38333E", "#508578", "#D7C1B1", "#689030", "#AD6F3B", "#CD9BCD","#D14285", "#6DDE88", "#652926", "#7FDCC0", "#8569D5", "#5E738F", "#D1A33D","#8A7C64", "#599861")) +
+theme(axis.title.x = element_text(face="bold",size=16),
+axis.text.x = element_text(angle=30, colour = "black", vjust=1, hjust = 1, size=14),
+axis.text.y = element_text(colour = "black", size=14),
+axis.title.y = element_text(face="bold", size=16),
+plot.title = element_text(size = 18),
+legend.title = element_text(size=14),
+legend.text = element_text(size = 13),
+
+
+#To subset only Euprymna species
+sub_eup=subset_samples(physeq,Description=="Euprymna_morsei"|Description=="Euprymna_beryi"|Description=="Sepiola_parva"|Description=="Eurpymna_scolopes"|Description=="E_tasmanica")
+
+#If sample numbers vary significantly, ANOSIM is more effective to show beta diversity statistical significance
+
+#To make rows in first line to column names in data frame
+names(OTU.clean)<-lapply(OTU.clean[1,], as.character)
+OTU.clean<-OTU.clean[-1,]
+
+#ALPHA DIVERSITY 
+a1=plot_richness(physeq1.r,x="Description",measures=c("Shannon","Chao1"),color="Description")+geom_boxplot()
