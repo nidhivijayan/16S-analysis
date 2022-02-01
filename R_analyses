@@ -1,3 +1,11 @@
+
+library("phyloseq"); packageVersion("phyloseq")
+library("ggplot2"); packageVersion("ggplot2")
+library("doParallel"); packageVersion("doParallel")
+library("foreach"); packageVersion("foreach")
+library("plyr"); packageVersion("plyr")
+set.seed(712)
+
 asv1<-read.table(file="table_from_biom.csv",sep=",",header=TRUE,row.names = 1) #ROW.NAMES=1 is VERY IMPORTANT!!!
 asv1m=as.matrix(asv1)
 #"fill" is to make sure empty cells are coerced or left blank, replace with "," to the " (tab) " [BY COPYING THE TAB IN TEXT EDIT!] to get taxa in separate columns
