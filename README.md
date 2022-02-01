@@ -1,8 +1,9 @@
 # 16S-analysis
 ## QIIME2 pipeline
 
-qiime/2-2020.6
+conda activate qiime/2-2020.6 (Or module load if using local computer)
 
+### Convert fastq to q2 artifact
 ```ruby
 qiime tools import --type 'SampleData[PairedEndSequencesWithQuality]' \
  --input-path /home/FCAM/nvijayan/(your input folder here) \
@@ -13,6 +14,7 @@ qiime tools import --type 'SampleData[PairedEndSequencesWithQuality]' \
 qiime demux summarize --i-data your_demuxed_filename.qza --o-visualization your_demuxed_filename.qzv
 ```
 
+### Denoise reads with DADA2
 ```ruby
 qiime dada2 denoise-paired --i-demultiplexed-seqs your_demuxed_filename.qza  \
 --o-table table_demux_dada.qza --o-representative-sequences rep-set.qza \
