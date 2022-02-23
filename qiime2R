@@ -1,0 +1,140 @@
+if (!requireNamespace("devtools", quietly = TRUE)){install.packages("devtools")}
+devtools::install_github("jbisanz/qiime2R") # current version is 0.99.20
+
+SVs<-read_qza("Eup-table.qza")
+names(SVs)
+#[1] "uuid"       "type"       "format"     "contents"   "version"    "data"       "provenance"
+
+#show first 5 samples and first 5 taxa
+SVs$data[1:5,1:5]
+SVs$uuid
+
+metadata<-read_q2metadata("metadata_squid_Eup.txt") #Didnt work
+metadata_eup = read.table("metadata_squid_Eup.txt",header=TRUE,fill=NA)
+taxonomy<-read_qza("taxonomy.qza")
+head(taxonomy$data)
+
+physeq<-qza_to_phyloseq(
+  features="Eup-table.qza",
+  tree="rooted_tree.qza",
+  "taxonomy.qza",
+  metadata = "metadata_squid_Eup.txt"
+)
+
+physeq
+library(tidyverse)
+library(qiime2R)
+library("phyloseq", lib.loc="/Library/Frameworks/R.framework/Versions/3.5/Resources/library")
+library("ggplot2"); packageVersion("ggplot2")
+library("plyr"); packageVersion("plyr")
+
+physeq_norm = transform_sample_counts(physeq, function(x) 1E6 * x/sum(x))
+ordu = ordinate(physeq_norm, "PCoA", "unifrac", weighted=TRUE)
+p1=plot_ordination(physeq_norm, ordu, color="Description")
+p1
+ps.rarefied = rarefy_even_depth(physeq, rngseed=1, sample.size=min(sample_sums(physeq)), replace=F)
+#24OTUs were removed because they are no longer present in any sample after random subsampling
+
+wunifrac_dist = phyloseq::distance(ps.rarefied, method="unifrac", weighted=T)
+ordination = ordinate(ps.rarefied, method="PCoA", distance=wunifrac_dist)
+p3=plot_ordination(ps.rarefied, ordination, color="Description")+geom_point(size=5)+scale_fill_manual(values =c("blueviolet","dodgerblue2","forestgreen","goldenrod1","deeppink2"))+geom_point(aes(fill=Description), colour="black", size=5,shape=21)+ scale_color_manual(values =c("blueviolet","dodgerblue2","forestgreen","goldenrod1","deeppink2"))+stat_ellipse(linetype = 2)
+adonis(wunifrac_dist ~ sample_data(ps.rarefied)$Description,permutations = 10000)
+#p-value=0.011 
+#For permutations at 50,000, p-value=0.01122
+#For permutations at 100,000, p-value=0.0107
+rarefy=rarefy_even_depth(physeq) #same plots and results as other normalization methods
+
+unifrac_dist = phyloseq::distance(ps.rarefied, method="unifrac", weighted=F)
+adonis(unifrac_dist ~ sample_data(ps.rarefied)$Description,permutations = 10000)
+
+
+anosim(wunifrac_dist, metadata_eup$Description, permutations = 1000)
+
+#Call:
+#  anosim(x = wunifrac_dist, grouping = metadata_eup$Description,      permutations = 1000) 
+#Dissimilarity: 
+  
+#  ANOSIM statistic R: 0.1795 
+#Significance: 0.001998 
+
+#Permutation: free
+#Number of permutations: 1000
+
+#I even removed the one E.berryi and E.morsei sample in the metadata and re-ran adonis, and I still got a p-value <0.005
+
+dispr <- vegan::betadisper(wunifrac_dist, phyloseq::sample_data(ps.rarefied)$Description)
+
+
+##############################
+###UPLOADING DISTANCE MATRIX###
+##############################
+
+distance_eup_km2=read.delim("dist_correct2_eup.txt",row.names = 1)
+distance_eup_km2<-as.matrix(distance_eup_km2)
+
+samples <- sample_names(ps.rarefied)
+
+##############################
+##### MANTEL TEST ############
+##############################
+physeq.wuf.dist<-distance(ps.rarefied,method="wunifrac")
+physeq.uuf.dist<-distance(ps.rarefied,method="unifrac")
+
+mantel(physeq.wuf.dist,distance_eup_km)
+mantel(physeq.uuf.dist,distance_eup_km)
+
+dist_upper <- function(X) t(X)[lower.tri(X, diag = FALSE)]
+
+wuf_corelog<-mantel.correlog(physeq.wuf.dist,distance_eup_km)
+wuf_corelog2<-mantel.correlog(physeq.wuf.dist,geodist)
+
+plot(wuf_corelog)
+
+geodist<-vegdist(distance_eup_km, method="euclidean")
+plot(geodist,physeq.wuf.dist,pch=16)
+mantel(physeq.wuf.dist,distance_eup_km2,method = "pearson",permutations=999)
+mantel(physeq.wuf.dist,distance_eup_km2,method = "spearman",permutations=999)
+
+#Mantel statistic based on Pearson's product-moment correlation 
+mantel(physeq.wuf.dist,distance_eup_km)
+
+Mantel statistic based on Pearson's product-moment correlation 
+
+Call:
+mantel(xdis = physeq.wuf.dist, ydis = distance_eup_km) 
+
+Mantel statistic r: 0.1146 
+Significance: 0.15 
+
+Upper quantiles of permutations (null model):
+90%   95% 97.5%   99% 
+0.138 0.178 0.206 0.231 
+Permutation: free
+Number of permutations: 999
+
+##############################
+##### DISTANCE DECAY PLOT ####
+##############################
+
+To convert distance matrix from GeographicdistanceMatrix software to dist format
+
+d1=as.dist(distance_eup_km)
+plot(d1,physeq.wuf.dist,ylim=c(0,1),xlim = c(0,max(d1)))
+decay.exp<-decay.model(physeq.wuf.dist,d1,y.type="dissim",model.type="exp",perm=100)
+plot.decay(decay.exp, col="magenta", remove.dots=TRUE, add=TRUE)
+
+plot(d1,physeq.wuf.dist,ylim=c(0,1),xlim = c(0,9000))
+#To add custom x axis tick marks
+axis(1,at=seq(0,8000,by=1000))
+
+library(betapart)
+plot(geodist,physeq.wuf.dist,ylim=c(0,1),xlim = c(0,max(geodist)))
+decay.exp<-decay.model(physeq.wuf.dist,geodist,y.type="dissim",model.type="exp",perm=100)
+plot(geodist,physeq.wuf.dist,ylim=c(0,1),xlim = c(0,max(geodist)))
+decay.exp<-decay.model(physeq.wuf.dist,geodist,y.type="dissim",model.type="exp",perm=100)
+plot.decay(decay.exp, col="red", remove.dots=TRUE, add=TRUE)
+
+
+
+
+
