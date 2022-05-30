@@ -179,10 +179,10 @@ physeq.for.upgma.table <- as.data.frame(physeq.for.upgma.table)
 physeq.for.upgma.table$SampleID <- row.names(physeq.for.upgma.table)
 physeq.for.upgma.table$Species <- metadata2$Species[match(metadata2$Description, physeq.for.upgma.table$SampleID)]
 
-#FORMAT DATA
+### FORMAT DATA
 physeq.for.upgma.table.molten <- melt(physeq.for.upgma.table, id.var = c("SampleID", "Species"), var = 'OTUID')
 
-#COMPUTE AVERAGES
+### COMPUTE AVERAGES
 physeq.for.upgma.table.mean <- aggregate(value~Species * OTUID, FUN = 'mean', data = physeq.for.upgma.table.molten)
 physeq.for.upgma.table.mean$value <- ceiling(physeq.for.upgma.table.mean$value) #Round values up (mean-ceiling)
 physeq.for.upgma.table.mean.casted <- dcast(physeq.for.upgma.table.mean, OTUID ~ Species)
@@ -201,21 +201,21 @@ phy.tree2 <- read_tree("pruned_tree.nwk") #Import rooted tree from QIIME. Must b
 
 physeq.for.upgma.mean = phyloseq(OTU2, TAX, META2a, phy.tree2) #Merge all files into a single Phyloseq object.
 
-#Bray-Curtis
+### Bray-Curtis
 physeq.for.upgma.mean.rarefied.bray.dist <- distance(physeq.for.upgma.mean, method = "bray") #Generate distance matrix
 physeq.for.upgma.mean.rarefied.bray.dist.UPGMA <- hclust(physeq.for.upgma.mean.rarefied.bray.dist, method = "average")
 plot(physeq.for.upgma.mean.rarefied.bray.dist.UPGMA)
 physeq.for.upgma.mean.rarefied.bray.dist.UPGMA <- as.phylo(physeq.for.upgma.mean.rarefied.bray.dist.UPGMA)
 write.tree(physeq.for.upgma.mean.rarefied.bray.dist.UPGMA, "physeq.rarefied.bray.dist.UPGMA.newick")
 
-#Unweighted
+### Unweighted
 physeq.for.upgma.mean.rarefied.unweighted.dist <- distance(physeq.for.upgma.mean, method = "uunifrac") #Generate distance matrix
 physeq.for.upgma.mean.rarefied.unweighted.dist.UPGMA <- hclust(physeq.for.upgma.mean.rarefied.unweighted.dist, method = "average")
 plot(physeq.for.upgma.mean.rarefied.unweighted.dist.UPGMA)
 physeq.for.upgma.mean.rarefied.unweighted.dist.UPGMA <- as.phylo(physeq.for.upgma.mean.rarefied.unweighted.dist.UPGMA)
 write.tree(physeq.for.upgma.mean.rarefied.unweighted.dist.UPGMA, "physeq.rarefied.unweighted.dist.UPGMA.newick")
 
-#Weighted
+### Weighted
 physeq.for.upgma.mean.rarefied.weighted.dist <- distance(physeq.for.upgma.mean, method = "wunifrac") #Generate distance matrix
 physeq.for.upgma.mean.rarefied.weighted.dist.UPGMA <- hclust(physeq.for.upgma.mean.rarefied.weighted.dist, method = "average")
 plot(physeq.for.upgma.mean.rarefied.weighted.dist.UPGMA)
@@ -228,14 +228,14 @@ mantel(physeq.for.upgma.mean.rarefied.unweighted.dist,distance_mya,method = "pea
 mantel(physeq.for.upgma.mean.rarefied.bray.dist,distance_mya,method = "pearson",permutations=999)
 
 
-## To make distance decay plot
+### To make distance decay plot
 d_mya=as.dist(distance_mya)
 plot(d_mya,physeq.for.upgma.mean.rarefied.weighted.dist,ylim=c(0,1),xlim = c(0,max(d_mya)))
 decay.exp<-decay.model(physeq.for.upgma.mean.rarefied.weighted.dist,d_mya,y.type="dissim",model.type="exp",perm=100)
 plot.decay(decay.exp, col="magenta", remove.dots=TRUE, add=TRUE)
 
 ## To make Barplots
-# Make each species its own physeq object
+### Make each species its own physeq object
 speciesList<-tapply(sample_names(physeq_norm), get_variable(physeq_norm, "Description"), c)
 
 speciesList_ID<-tapply(sample_names(physeq_norm), get_variable(physeq_norm, "Sample"), c)
@@ -270,7 +270,7 @@ bar=ggplot(agg.class.avg,aes(x=species,y=value,fill=Class)) +
              theme(axis.text.x = element_text(angle=30,vjust=1, hjust = 1, size=12),strip.text.x = element_text(size=15),legend.text = element_text(size = 13),legend.key.size =  unit(2,"line"),axis.text.y=element_text(size=12),axis.title.y = element_text(size=15))+ scale_fill_manual(values = paired)+
      facet_grid(.~family+species2,drop = TRUE,scales="free",space="free")
  
-## To prune tree to keep some otus only 
+### To prune tree to keep some otus only 
 t1=read.tree("tree.nwk")
 otuid2=read.csv("otuid2.csv",header=FALSE) #made table with just otus to keep
 o2<-as.character(otuid2$V1) #Makes the column to character list
