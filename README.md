@@ -89,6 +89,7 @@ biom convert -i feature-table.biom -o table.txt --to-tsv
 
 # In R
 # Load packages
+```
 library(qiime2R)
 library(tidyverse)
 library("phyloseq", lib.loc="/Library/Frameworks/R.framework/Versions/3.5/Resources/library")
@@ -99,39 +100,50 @@ library("vegan")
 library("RColorbrewer")
 library("scales")
 library("reshape2")
+```
 
 ### Convert qiime objects to R
+```
 physeq_all<-qza_to_phyloseq(
   features="table-all.qza",
   tree="rooted_tree_all.qza",
   "taxonomy_all.qza",
   metadata = "metadata_squid_All.txt"
 )
+```
 
 ### To normalize
+```
 physeq_norm = transform_sample_counts(physeq_all, function(x) 1538 * x/sum(x))
-
+```
 ### To rarefy
+```
 ps2.rarefied = rarefy_even_depth(physeq_all, rngseed=1, sample.size=min(sample_sums(physeq_all)), replace=F)
-
+```
 ### Beta diversity
 #### For weighted Unifrac
+```
 wunifrac_norm_all = phyloseq::distance(physeq_norm, method="unifrac", weighted=T) 
-
+```
 #### For unweighted Unifrac
+```
 unifrac_norm_all = phyloseq::distance(physeq_norm, method="unifrac", weighted=F)
-
+```
 ### Bray-Curtis distance
+```
 bdist = phyloseq::distance(physeq_norm,"bray")
-
+```
 ### To make Ordination plot
+```
 ordination_all_norm = ordinate(physeq_norm, method="PCoA", distance=wunifrac_norm_all) 
+```
 method= PCoA or NMDS
 distance= beta diversity distance
-
+```
 p_pcoa=plot_ordination(physeq_norm, ordination_pcoa, color="Family")+geom_point(size=5)+geom_point(aes(fill=Family), colour="black", size=5,shape=21)+stat_ellipse(linetype = 2)+stat_ellipse(geom = "polygon",aes(fill = Family), alpha = 0.25)+scale_fill_manual(values =dark2)+scale_color_manual(values =dark2)+theme(legend.title = element_text(size=20),legend.text = element_text(size=18),axis.text = element_text(size=14),legend.key.size = unit(2,"line"))
-
+```
 ### For the color palette "dark2"
+```
 dark2 <- brewer.pal(8, "Dark2") 
 dark2 <- colorRampPalette(coul)(14)
 
@@ -139,8 +151,9 @@ paired<-brewer.pal(12, "Paired")
 paired <- colorRampPalette(paired)(15)
 
 color3<- c("black","black","black","black","black")
-
+```
 ### For Alpha diversity
+```
 symnum.args = list(cutpoints = c(0, 0.0001, 0.001, 0.01, 0.05, 1), symbols = c("****", "***", "**", "ns", "ns"))
 
 comparisons <- list(c("a_Sepiidae","b_Idiosepiidae"),c("a_Sepiidae","c_Sepiolidae"), c("a_Sepiidae", "d_Loliginidae"),c ("b_Idiosepiidae","c_Sepiolidae"), c("d_Loliginidae", "c_Sepiolidae"))
@@ -151,38 +164,46 @@ p1_alpha=plot_richness(physeq_norm, x="Family", measures=c("Observed","Shannon",
    stat_compare_means(method = "wilcox.test", comparisons = comparisons, label = "p.signif", symnum.args = symnum.args)
 
 rich = estimate_richness(physeq_norm,measures = "Observed")
+```
 *measures can be different alpha diversity measures
 
 #### To perform wilcoxon test
+```
 pairwise.wilcox.test(rich$Oberseved, sample_data(physeq_norm)$Family)
-
+```
 #### To perform Dunn's test
+```
 alphaChao = estimate_richness(physeq_norm, measures="Observed")
 alpha.stats <- cbind(alphaChao, sample_data(physeq_norm))
 dunn.test(alpha.stats$Observed, alpha.stats$Description, method="bonferroni")
-
+```
 
 ### PERMANOVA
+```
 adonis(wunifrac_norm_all ~ sample_data(physeq_norm)$Description,permutations = 10000)
 dispr <- vegan::betadisper(wunifrac_norm_all, phyloseq::sample_data(physeq_norm)$Description)
-
+```
 ## To run mantel test
 ### First upload host distance matrix
+```
 distance_mya_m=read.delim("distance_mya_mean.txt",row.names = 1)
 distance_mya<-as.matrix(distance_mya_m)
-
+```
 ### Create UPGMA microbiome distance (Trevelline et al. 2020)
+```
 physeq.for.upgma.table = as(otu_table(physeq.rarefied), "matrix")
 physeq.for.upgma.table <- t(physeq.for.upgma.table)
 physeq.for.upgma.table <- as.data.frame(physeq.for.upgma.table)
 
 physeq.for.upgma.table$SampleID <- row.names(physeq.for.upgma.table)
 physeq.for.upgma.table$Species <- metadata2$Species[match(metadata2$Description, physeq.for.upgma.table$SampleID)]
-
+```
 ### FORMAT DATA
+```
 physeq.for.upgma.table.molten <- melt(physeq.for.upgma.table, id.var = c("SampleID", "Species"), var = 'OTUID')
-
+```
 ### COMPUTE AVERAGES
+```
 physeq.for.upgma.table.mean <- aggregate(value~Species * OTUID, FUN = 'mean', data = physeq.for.upgma.table.molten)
 physeq.for.upgma.table.mean$value <- ceiling(physeq.for.upgma.table.mean$value) #Round values up (mean-ceiling)
 physeq.for.upgma.table.mean.casted <- dcast(physeq.for.upgma.table.mean, OTUID ~ Species)
@@ -200,42 +221,48 @@ META2a = sample_data(metadata.by.species) #Import metadata as Phyloseq object
 phy.tree2 <- read_tree("pruned_tree.nwk") #Import rooted tree from QIIME. Must be trimmed of all exluded OTUs.
 
 physeq.for.upgma.mean = phyloseq(OTU2, TAX, META2a, phy.tree2) #Merge all files into a single Phyloseq object.
-
+```
 ### Bray-Curtis
+```
 physeq.for.upgma.mean.rarefied.bray.dist <- distance(physeq.for.upgma.mean, method = "bray") #Generate distance matrix
 physeq.for.upgma.mean.rarefied.bray.dist.UPGMA <- hclust(physeq.for.upgma.mean.rarefied.bray.dist, method = "average")
 plot(physeq.for.upgma.mean.rarefied.bray.dist.UPGMA)
 physeq.for.upgma.mean.rarefied.bray.dist.UPGMA <- as.phylo(physeq.for.upgma.mean.rarefied.bray.dist.UPGMA)
 write.tree(physeq.for.upgma.mean.rarefied.bray.dist.UPGMA, "physeq.rarefied.bray.dist.UPGMA.newick")
-
+```
 ### Unweighted
+```
 physeq.for.upgma.mean.rarefied.unweighted.dist <- distance(physeq.for.upgma.mean, method = "uunifrac") #Generate distance matrix
 physeq.for.upgma.mean.rarefied.unweighted.dist.UPGMA <- hclust(physeq.for.upgma.mean.rarefied.unweighted.dist, method = "average")
 plot(physeq.for.upgma.mean.rarefied.unweighted.dist.UPGMA)
 physeq.for.upgma.mean.rarefied.unweighted.dist.UPGMA <- as.phylo(physeq.for.upgma.mean.rarefied.unweighted.dist.UPGMA)
 write.tree(physeq.for.upgma.mean.rarefied.unweighted.dist.UPGMA, "physeq.rarefied.unweighted.dist.UPGMA.newick")
-
+```
 ### Weighted
+```
 physeq.for.upgma.mean.rarefied.weighted.dist <- distance(physeq.for.upgma.mean, method = "wunifrac") #Generate distance matrix
 physeq.for.upgma.mean.rarefied.weighted.dist.UPGMA <- hclust(physeq.for.upgma.mean.rarefied.weighted.dist, method = "average")
 plot(physeq.for.upgma.mean.rarefied.weighted.dist.UPGMA)
 physeq.for.upgma.mean.rarefied.weighted.dist.UPGMA <- as.phylo(physeq.for.upgma.mean.rarefied.weighted.dist.UPGMA)
 write.tree(physeq.for.upgma.mean.rarefied.weighted.dist.UPGMA, "physeq.rarefied.weighted.dist.UPGMA_avg.newick")
-
+```
 ### Run Mantel with vegan package
+```
 mantel(physeq.for.upgma.mean.rarefied.weighted.dist,distance_mya,method = "spearman",permutations=999)
 mantel(physeq.for.upgma.mean.rarefied.unweighted.dist,distance_mya,method = "pearson",permutations=999)
 mantel(physeq.for.upgma.mean.rarefied.bray.dist,distance_mya,method = "pearson",permutations=999)
-
+```
 
 ### To make distance decay plot
+```
 d_mya=as.dist(distance_mya)
 plot(d_mya,physeq.for.upgma.mean.rarefied.weighted.dist,ylim=c(0,1),xlim = c(0,max(d_mya)))
 decay.exp<-decay.model(physeq.for.upgma.mean.rarefied.weighted.dist,d_mya,y.type="dissim",model.type="exp",perm=100)
 plot.decay(decay.exp, col="magenta", remove.dots=TRUE, add=TRUE)
-
+```
 ## To make Barplots
 ### Make each species its own physeq object
+```
 speciesList<-tapply(sample_names(physeq_norm), get_variable(physeq_norm, "Description"), c)
 
 speciesList_ID<-tapply(sample_names(physeq_norm), get_variable(physeq_norm, "Sample"), c)
@@ -269,12 +296,14 @@ bar=ggplot(agg.class.avg,aes(x=species,y=value,fill=Class)) +
         ylab("Relative Abudance")+
              theme(axis.text.x = element_text(angle=30,vjust=1, hjust = 1, size=12),strip.text.x = element_text(size=15),legend.text = element_text(size = 13),legend.key.size =  unit(2,"line"),axis.text.y=element_text(size=12),axis.title.y = element_text(size=15))+ scale_fill_manual(values = paired)+
      facet_grid(.~family+species2,drop = TRUE,scales="free",space="free")
- 
+```
+
 ### To prune tree to keep some otus only 
+```
 t1=read.tree("tree.nwk")
 otuid2=read.csv("otuid2.csv",header=FALSE) #made table with just otus to keep
 o2<-as.character(otuid2$V1) #Makes the column to character list
 pruned.tree<-drop.tip(t1,t1$tip.label[-match(o2, t1$tip.label)])
 write.tree(pruned.tree,"pruned_tree.nwk")
-
+```
 
