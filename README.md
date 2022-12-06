@@ -7,62 +7,27 @@ conda activate qiime/2-2020.6 (Or module load if using local computer)
 ```ruby
 qiime tools import --type 'SampleData[PairedEndSequencesWithQuality]' \
  --input-path /home/FCAM/nvijayan/(your input folder here) \
- --input-format CasavaOneEightSingleLanePerSampleDirFmt --output-path your_demuxed_filename.qza
+ --input-format CasavaOneEightSingleLanePerSampleDirFmt --output-path demux.qza
 ```
 
 ```ruby
-qiime demux summarize --i-data your_demuxed_filename.qza --o-visualization your_demuxed_filename.qzv
+qiime demux summarize --i-data demux.qza --o-visualization demux.qzv
 ```
 
 ### Denoise reads with DADA2
 ```ruby
-qiime dada2 denoise-paired --i-demultiplexed-seqs your_demuxed_filename.qza  \
+qiime dada2 denoise-paired --i-demultiplexed-seqs demux.qza  \
 --o-table table_demux_dada.qza --o-representative-sequences rep-set.qza \
 --o-denoising-stats denoising_stat.qza --p-trunc-len-f 250 --p-trunc-len-r 250
 ```
 
-### TO FILTER OUT THE CONTROL SEQS
-```ruby
-qiime feature-table filter-samples \
-  --i-table table_demux_dada.qza \
- --m-metadata-file metadata_squid_Jan2022.txt \
-  --p-where '"#SampleID" IN ("Control1", "Control2","Control3")' \
-  --o-filtered-table table-blanks.qza
-
-qiime feature-table summarize \
-  --i-table table-blanks.qza \
-  --o-visualization table-blanks.qzv
-```
-### I donwloaded the "Frequency per feature detail in csv, which is the "feature-frequency-detail.csv" file.
-echo 'Feature ID\tFrequency' | cat - feature-frequency-detail.csv | tr "," "\\t" > features-to-filter.tsv
-
-```ruby
-qiime feature-table filter-samples \
-  --i-table table_demux_dada.qza \
-  --m-metadata-file metadata_squid_Jan2022.txt \
-  --p-where '"#SampleID" IN ("Control1", "Control2","Control3")' \
-  --p-exclude-ids \
-  --o-filtered-table table-sans-blanks.qza
-```
-
-```ruby
-qiime feature-table filter-features \
-  --i-table table-sans-blanks.qza \
-  --m-metadata-file features-to-filter.tsv \
-  --p-exclude-ids \
-  --o-filtered-table filtered-table.qza
-  
-  qiime feature-table summarize \
-  --i-table filtered-table.qza \
-  --o-visualization filtered-table.qzv
-  ```
   
 ### Convert SILVA database to QIIME classifier
 ```ruby
 qiime feature-classifier fit-classifier-naive-bayes \
 --i-reference-reads ref-seqs.qza \
 --i-reference-taxonomy 99_ref-taxonomy.qza \
---o-classifier gg_99_classifier_2.qza
+--o-classifier gg_99_classifier.qza
 ```
 
 ### Add taxonomy
@@ -73,11 +38,34 @@ qiime feature-classifier classify-sklearn --i-classifier gg_99_classifier.qza --
 ```ruby
 qiime taxa barplot --i-table filtered-table.qza --i-taxonomy taxonomy.qza --m-metadata-file metadata_squid_Jan2022.txt  --o-visualization taxa-bar-plots.qzv
 ```
+```ruby
+qiime phylogeny align-to-tree-mafft-fasttree \
+  --i-sequences rep-set.qza \
+  --output-dir phylogeny-align-to-tree-mafft-fasttree
+ ```
+ 
+ ### Diversity metrics
+ ```ruby
+qiime diversity core-metrics-phylogenetic \
+  --i-phylogeny phylogeny-align-to-tree-mafft-fasttree/rooted_tree.qza \
+  --i-table Eup-table-no-mitochondria-no-chloroplast.qza \
+  --p-sampling-depth 6728 \
+  --m-metadata-file metadata_squid.txt \
+  --output-dir diversity-core-metrics-phylogenetic
+  
+qiime diversity beta-group-significance \
+  --i-distance-matrix diversity-core-metrics-phylogenetic/weighted_unifrac_distance_matrix.qza \
+  --m-metadata-file metadata_squid.txt \
+  --m-metadata-column Description \
+  --p-pairwise \
+  --o-visualization weighted-unifrac-group-significance.qzv
+  ```
+
 ### To convert table to biom and taxonomy file
 ```ruby
 qiime tools export  --input-path filtered-table.qza --output-path exported-feature-table
 
-qiime tools export --input-path /Users/nidhivijayan/Documents/QIIME/all_squids_data/dada_qiime/taxonomy_demx_paired.qza --output-path taxonomy_phyloseq
+qiime tools export --input-path taxonomy_demx_paired.qza --output-path taxonomy_phyloseq
 
 ```
 ### To convert biom to tsv
