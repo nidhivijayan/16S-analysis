@@ -11,44 +11,33 @@ qiime dada2 denoise-paired --i-demultiplexed-seqs your_demuxed_filename.qza  \
 --o-table table_demux_dada.qza --o-representative-sequences rep-set.qza \
 --o-denoising-stats denoising_stat.qza --p-trunc-len-f 250 --p-trunc-len-r 250
 
-TO FILTER OUT THE CONTROL SEQS
-qiime feature-table filter-samples \
-#  --i-table table_demux_dada.qza \
-# --m-metadata-file metadata_squid_Jan2022.txt \
-#  --p-where '"#SampleID" IN ("Control1", "Control2","Control3")' \
-#  --o-filtered-table table-blanks.qza
-
-#qiime feature-table summarize \
-#  --i-table table-blanks.qza \
-#  --o-visualization table-blanks.qzv
-
-#I donwload the "Frequency per feature detail in csv, which is the "feature-frequency-detail.csv" file.
-#echo 'Feature ID\tFrequency' | cat - feature-frequency-detail.csv | tr "," "\\t" > features-to-filter.tsv
-
-#qiime feature-table filter-samples \
-#  --i-table table_demux_dada.qza \
-#  --m-metadata-file metadata_squid_Jan2022.txt \
-#  --p-where '"#SampleID" IN ("Control1", "Control2","Control3")' \
-#  --p-exclude-ids \
-#  --o-filtered-table table-sans-blanks.qza
-
-qiime feature-table filter-features \
-  --i-table table-sans-blanks.qza \
-  --m-metadata-file features-to-filter.tsv \
-  --p-exclude-ids \
-  --o-filtered-table filtered-table.qza
-  
-  qiime feature-table summarize \
-  --i-table filtered-table.qza \
-  --o-visualization filtered-table.qzv
   
 #Convert SILVA database to QIIME classifier
 qiime feature-classifier fit-classifier-naive-bayes \
 --i-reference-reads ref-seqs.qza \
 --i-reference-taxonomy 99_ref-taxonomy.qza \
---o-classifier gg_99_classifier_2.qza
+--o-classifier gg_99_classifier.qza
 
 #Add taxonomy
 qiime feature-classifier classify-sklearn --i-classifier gg_99_classifier.qza --i-reads rep-set.qza --o-classification taxonomy.qza 
 
 qiime taxa barplot --i-table filtered-table.qza --i-taxonomy taxonomy.qza --m-metadata-file metadata_squid_Jan2022.txt  --o-visualization taxa-bar-plots.qzv
+
+qiime phylogeny align-to-tree-mafft-fasttree \
+  --i-sequences rep-set.qza \
+  --output-dir phylogeny-align-to-tree-mafft-fasttree
+ 
+ #Diversity metrics
+ qiime diversity core-metrics-phylogenetic \
+  --i-phylogeny phylogeny-align-to-tree-mafft-fasttree/rooted_tree.qza \
+  --i-table Eup-table-no-mitochondria-no-chloroplast.qza \
+  --p-sampling-depth 6728 \
+  --m-metadata-file metadata_squid_Eup.txt \
+  --output-dir diversity-core-metrics-phylogenetic-EUP
+  
+qiime diversity beta-group-significance \
+  --i-distance-matrix diversity-core-metrics-phylogenetic-EUP/weighted_unifrac_distance_matrix.qza \
+  --m-metadata-file metadata_squid_Eup.txt \
+  --m-metadata-column Description \
+  --p-pairwise \
+  --o-visualization weighted-unifrac-group-significance.qzv
