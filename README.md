@@ -36,9 +36,6 @@ qiime feature-classifier classify-sklearn --i-classifier gg_99_classifier.qza --
 ```
 
 ```ruby
-qiime taxa barplot --i-table filtered-table.qza --i-taxonomy taxonomy.qza --m-metadata-file metadata_squid_Jan2022.txt  --o-visualization taxa-bar-plots.qzv
-```
-```ruby
 qiime phylogeny align-to-tree-mafft-fasttree \
   --i-sequences rep-set.qza \
   --output-dir phylogeny-align-to-tree-mafft-fasttree
@@ -46,16 +43,20 @@ qiime phylogeny align-to-tree-mafft-fasttree \
  ### Remove chloroplast and mitochondria
  ```ruby
  qiime taxa filter-table \
-  --i-table Eup-table.qza \
+  --i-table table.qza \
   --i-taxonomy taxonomy.qza \
   --p-exclude mitochondria,chloroplast \
   --o-filtered-table table-no-mitochondria-no-chloroplast.qza
 ```  
+## Create preliminary bar plot
+```ruby
+qiime taxa barplot --i-table filtered-table.qza --i-taxonomy taxonomy.qza --m-metadata-file metadata_squid_Jan2022.txt  --o-visualization taxa-bar-plots.qzv
+```
  ### Diversity metrics
  ```ruby
 qiime diversity core-metrics-phylogenetic \
   --i-phylogeny phylogeny-align-to-tree-mafft-fasttree/rooted_tree.qza \
-  --i-table Eup-table-no-mitochondria-no-chloroplast.qza \
+  --i-table table-no-mitochondria-no-chloroplast.qza \
   --p-sampling-depth 6728 \
   --m-metadata-file metadata_squid.txt \
   --output-dir diversity-core-metrics-phylogenetic
