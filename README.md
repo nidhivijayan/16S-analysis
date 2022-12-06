@@ -43,7 +43,14 @@ qiime phylogeny align-to-tree-mafft-fasttree \
   --i-sequences rep-set.qza \
   --output-dir phylogeny-align-to-tree-mafft-fasttree
  ```
- 
+ ### Remove chloroplast and mitochondria
+ ```ruby
+ qiime taxa filter-table \
+  --i-table Eup-table.qza \
+  --i-taxonomy taxonomy.qza \
+  --p-exclude mitochondria,chloroplast \
+  --o-filtered-table table-no-mitochondria-no-chloroplast.qza
+```  
  ### Diversity metrics
  ```ruby
 qiime diversity core-metrics-phylogenetic \
