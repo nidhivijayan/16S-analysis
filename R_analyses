@@ -82,3 +82,51 @@ OTU.clean<-OTU.clean[-1,]
 
 #ALPHA DIVERSITY 
 a1=plot_richness(physeq1.r,x="Description",measures=c("Shannon","Chao1"),color="Description")+geom_boxplot()
+
+#Beta
+rarefy=rarefy_even_depth(physeq) #same plots and results as other normalization methods
+
+unifrac_dist = phyloseq::distance(ps.rarefied, method="unifrac", weighted=F)
+adonis(unifrac_dist ~ sample_data(ps.rarefied)$Description,permutations = 10000)
+
+anosim(wunifrac_dist, metadata_eup$Description, permutations = 9999)
+dispr <- vegan::betadisper(wunifrac_dist, phyloseq::sample_data(ps.rarefied)$Description)
+
+################################
+##### TO make bubble plot ######
+###############################
+
+pc = read.csv("bubble_plot.csv", header = TRUE)
+pcm = melt(pc, id = c("Sample"))
+
+write.csv(pcm,"bubble_melted_ed2.csv")
+pcm=read.csv("bubble_melted_ed2.csv",header=TRUE)
+
+colours = c( "#A54657",  "#582630", "#F7EE7F", "#4DAA57","#F1A66A","#F26157", "#F9ECCC", "#679289", "#33658A",
+             "#F6AE2D","#86BBD8")
+pcm$Sample <- factor(pcm$Sample,levels=unique(pcm$Sample))
+Bubble = ggplot(pcm, aes(x = Sample, y = variable)) + 
+  geom_point(aes(size = value, fill = variable), alpha = 0.75, shape = 21) + 
+  scale_size_continuous(limits = c(0.000001, 100), range = c(1,10), breaks = c(1,10,50,100)) + 
+  labs( x= "", y = "", size = "Relative Abundance (%)", fill = "")  + 
+  theme(legend.key=element_blank(), 
+        axis.text.x = element_text(colour = "black", size = 12, face = "bold", angle = 90, vjust = 0.3, hjust = 1), 
+        axis.text.y = element_text(colour = "black", face = "bold", size = 11), 
+        legend.text = element_text(size = 14, face ="bold", colour ="black"), 
+        legend.title = element_text(size = 16, face = "bold"), 
+        panel.background = element_blank(), panel.border = element_rect(colour = "black", fill = NA, size = 1.2), 
+        legend.position = "top",strip.text.x = element_text(size=15)) +  
+  scale_fill_manual(values = color_bubble, guide = FALSE) + 
+  scale_y_discrete(limits = rev(levels(pcm$variable)))+facet_grid(.~family,drop = TRUE,space = "free",scales="free")
+Bubble
+
+################################
+##### TO make hclust #######
+###############################
+otu_table(ps2.rarefied) <-otu_table(decostand(otu_table(ps2.rarefied), method = "hellinger"), taxa_are_rows=TRUE)
+d <- distance(ps2.rarefied, method="wunifrac", type="samples",weighted=T)
+hclust_w<-hclust(d,method="average")
+h6=plot(hclust_w)
+
+
+
