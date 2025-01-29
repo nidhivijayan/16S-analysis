@@ -263,20 +263,6 @@ per_rel<-read.delim("per_rel_otu_all.txt",row.names=1)
 View(per_rel)
 
 # Subset the data frame for each Class
-diatom_values <- per_rel["a_Diatom", ]
-View(diatom_values)
-AVP_samples <- as.numeric(diatom_values[grep("AVP", colnames(diatom_values))])
-seawater_samples <- as.numeric(diatom_values[grep("seawater", colnames(diatom_values))])
-View(AVP_samples)
-t.test(AVP_samples, seawater_samples, alternative="two.sided", var.equal=FALSE)
-# data:  AVP_samples and seawater_samples
-# t = 2.737, df = 7.0034, p-value = 0.02903
-# alternative hypothesis: true difference in means is not equal to 0
-# 95 percent confidence interval:
-#   0.9921336 13.5830864
-# sample estimates:
-#   mean of x mean of y 
-# 7.5328141 0.2452041 
 
 alpha_values <- per_rel["b_Alpha", ]
 View(alpha_values)
@@ -286,14 +272,16 @@ View(AVP_samples)
 t.test(AVP_samples, seawater_samples, alternative="two.sided", var.equal=FALSE)
 # Welch Two Sample t-test
 # 
+# Welch Two Sample t-test
+# 
 # data:  AVP_samples and seawater_samples
-# t = -3.8935, df = 8.9938, p-value = 0.00366
+# t = -1.5065, df = 8.9455, p-value = 0.1664
 # alternative hypothesis: true difference in means is not equal to 0
 # 95 percent confidence interval:
-#   -29.989521  -7.946197
+#   -22.57634   4.53700
 # sample estimates:
 #   mean of x mean of y 
-# 19.33687  38.30473 
+# 31.80767  40.82734 
 
 gamma_values <- per_rel["c_Gamma", ]
 View(gamma_values)
@@ -301,16 +289,15 @@ AVP_samples <- as.numeric(gamma_values[grep("AVP", colnames(gamma_values))])
 seawater_samples <- as.numeric(gamma_values[grep("seawater", colnames(gamma_values))])
 View(AVP_samples)
 t.test(AVP_samples, seawater_samples, alternative="two.sided", var.equal=FALSE)
-# Welch Two Sample t-test
-# 
+
 # data:  AVP_samples and seawater_samples
-# t = 2.3877, df = 8.4978, p-value = 0.04227
+# t = 4.9997, df = 8.9533, p-value = 0.0007509
 # alternative hypothesis: true difference in means is not equal to 0
 # 95 percent confidence interval:
-#   0.3008674 13.3860887
+#   10.52253 27.93818
 # sample estimates:
 #   mean of x mean of y 
-# 16.531444  9.687966 
+# 29.78870  10.55834  
 
 ep_values <- per_rel["d_Epsilonproteobacteria", ]
 View(ep_values)
@@ -365,4 +352,32 @@ t.test(AVP_samples, seawater_samples, alternative="two.sided", var.equal=FALSE)
 # sample estimates:
 #   mean of x mean of y 
 # 2.497115  1.687581
+
+#PERMDISP==
+
+grouping_variable <- sample_data(physeq_norm)$Sample
+# Run betadisper
+bd <- betadisper(wunifrac_norm_all, grouping_variable)
+summary(bd)
+# Perform a significance test for differences in dispersion
+anova(bd)
+# Analysis of Variance Table
+# 
+# Response: Distances
+# Df   Sum Sq   Mean Sq F value Pr(>F)  
+# Groups     1 0.014873 0.0148734  5.5902 0.0423 *
+#   Residuals  9 0.023946 0.0026606 
+# Permutation test for significance
+permutest(bd)
+
+# Permutation test for homogeneity of multivariate dispersions
+# Permutation: free
+# Number of permutations: 999
+# 
+# Response: Distances
+# Df   Sum Sq   Mean Sq      F N.Perm Pr(>F)  
+# Groups     1 0.014873 0.0148734 5.5902    999  0.048 *
+#   Residuals  9 0.023946 0.0026606                       
+# Visualize the results
+plot(bd)
 
